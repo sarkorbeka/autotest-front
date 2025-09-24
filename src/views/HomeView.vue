@@ -7,6 +7,11 @@ const loading = ref<boolean>(false)
 const success = ref<boolean>(false)
 const error = ref<string>('')
 
+const userData = ref<{ telegram_id: number | null; full_name: string }>({
+  telegram_id: null,
+  full_name: ''
+})
+
 type TelegramUser = {
   id: number;
   first_name: string;
@@ -30,32 +35,27 @@ onMounted(() => {
   const tg = telegramGlobal.value?.WebApp
   if (tg && tg.initDataUnsafe?.user) {
     console.log("hello", tg.initDataUnsafe.user);
+    userData.value.telegram_id = tg.initDataUnsafe.user.id
+    userData.value.full_name = tg.initDataUnsafe.user.first_name + ' ' + (tg.initDataUnsafe.user.last_name || '')
+    console.log(userData.value.telegram_id, userData.value.full_name);
 
-    telegramId.value = tg.initDataUnsafe.user.id
-    fullName.value = tg.initDataUnsafe.user.first_name + ' ' + (tg.initDataUnsafe.user.last_name || '')
-    console.log(telegramId.value, fullName.value);
-    
+    submitForm()
   }
 })
-
-// onMounted(() => {
-//   console.log("Telegram global:", window.Telegram.WebApp.initDataUnsafe.user)
-//   console.log("WebApp:", window.Telegram?.WebApp)
-// })
 
 const submitForm = async () => {
   loading.value = true
   error.value = ''
   success.value = false
   try {
-    const response = await fetch('https://7580d4a0132f.ngrok-free.app/api/autotest/v1/tg/auth', {
+    const response = await fetch('https://halley-peritectic-unpreclusively.ngrok-free.dev/api/autotest/v1/tg/auth', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        telegram_id: telegramId.value,
-        full_name: fullName.value
+        telegram_id: userData.value.telegram_id,
+        full_name: userData.value.full_name
       })
     })
     if (!response.ok) {
@@ -80,20 +80,20 @@ const submitForm = async () => {
     <form @submit.prevent="submitForm">
       <div>
         <label>Telegram ID:</label>
-        <p>{{ telegramId }}</p>
-        <input v-model="telegramId"
+        <p>{{ userData.telegram_id }}</p>
+        <input v-model="userData.telegram_id"
           disabled />
       </div>
 
       <div>
         <label>Полное имя:</label>
-        <p>{{ fullName }}</p>
-        <input v-model="fullName"
+        <p class="text-[red]">{{ userData.full_name }}</p>
+        <input v-model="userData.full_name"
           disabled />
       </div>
 
       <button type="submit"
-        :disabled="loading || !telegramId">Отправить</button>
+        :disabled="loading || !userData.telegram_id">Отправить</button>
     </form>
     <div v-if="success"
       style="color: green; margin-top: 10px;">
@@ -106,6 +106,7 @@ const submitForm = async () => {
     <div style="margin-top: 20px;">
       <h2>Глобальный объект Telegram:</h2>
       <pre>{{ telegramGlobal }}</pre>
+      <pre>{{ userData }}</pre>
     </div>
   </main>
 </template>
