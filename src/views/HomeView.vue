@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, reactive } from 'vue'
 
-const telegramId = ref<number | null>(null)
-const fullName = ref<string>('')
 const loading = ref<boolean>(false)
 const success = ref<boolean>(false)
 const error = ref<string>('')
 
-const userData = ref<{ telegram_id: number | null; full_name: string }>({
+const userData = reactive<{ telegram_id: number | null; full_name: string }>({
   telegram_id: null,
   full_name: ''
 })
@@ -34,10 +32,14 @@ onMounted(() => {
   console.log(telegramGlobal.value?.WebApp.initDataUnsafe)
   const tg = telegramGlobal.value?.WebApp
   if (tg && tg.initDataUnsafe?.user) {
-    console.log("hello", tg.initDataUnsafe.user);
-    userData.value.telegram_id = tg.initDataUnsafe.user.id
-    userData.value.full_name = tg.initDataUnsafe.user.first_name + ' ' + (tg.initDataUnsafe.user.last_name || '')
-    console.log(userData.value.telegram_id, userData.value.full_name);
+    localStorage.setItem("user", JSON.stringify(tg.initDataUnsafe.user));
+
+    console.log(JSON.parse(localStorage.getItem("user") ?? ""));
+
+    const store = JSON.parse(localStorage.getItem("user") ?? "");
+
+    userData.telegram_id = store.id;
+    userData.full_name = store.first_name + ' ' + (store.last_name || '');
 
     submitForm()
   }
@@ -54,8 +56,8 @@ const submitForm = async () => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        telegram_id: userData.value.telegram_id,
-        full_name: userData.value.full_name
+        telegram_id: userData.telegram_id,
+        full_name: userData.full_name
       })
     })
     if (!response.ok) {
@@ -76,8 +78,9 @@ const submitForm = async () => {
 
 <template>
   <main>
+    <h1>Welcome - {{ userData.full_name }}</h1>
     <!-- <h1>Авторизация через Telegram</h1> -->
-    <form @submit.prevent="submitForm">
+    <!-- <form @submit.prevent="submitForm">
       <div>
         <label>Telegram ID:</label>
         <p>{{ userData.telegram_id }}</p>
@@ -107,6 +110,8 @@ const submitForm = async () => {
       <h2>Глобальный объект Telegram:</h2>
       <pre>{{ telegramGlobal }}</pre>
       <pre>{{ userData }}</pre>
-    </div>
+      <div>telegramID: {{ telegramID }}</div>
+      <div>full_name: {{ full_name }}</div>
+    </div> -->
   </main>
 </template>
